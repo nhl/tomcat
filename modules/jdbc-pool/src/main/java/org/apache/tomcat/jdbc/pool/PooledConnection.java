@@ -17,6 +17,7 @@
 package org.apache.tomcat.jdbc.pool;
 
 
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.HashMap;
@@ -449,21 +450,24 @@ public class PooledConnection {
             query = poolProperties.getValidationQuery();
         }
 
-        Statement stmt = null;
         try {
-            stmt = connection.createStatement();
-            stmt.execute(query);
-            stmt.close();
-            this.lastValidated = now;
-            return true;
-        } catch (Exception ex) {
-            if (getPoolProperties().getLogValidationErrors()) {
-                log.warn("SQL Validation error", ex);
-            } else if (log.isDebugEnabled()) {
-                log.debug("Unable to validate object:",ex);
+            Statement statement = connection.createStatement();
+            try {
+                ResultSet rs = statement.executeQuery(query);
+                try {
+
+                    if (!rs.next()) {
+                        throw new SQLException("Connection validation failed, no result for query: " + query);
+                    }
+
+                } finally {
+                    rs.close();
+                }
+            } finally {
+                statement.close();
             }
-            if (stmt!=null)
-                try { stmt.close();} catch (Exception ignore2){/*NOOP*/}
+        } catch (SQLException e) {
+            return false;
         }
         return false;
     } //validate
