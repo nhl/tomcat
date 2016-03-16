@@ -459,6 +459,7 @@ public class PooledConnection {
                     if (!rs.next()) {
                         throw new SQLException("Connection validation failed, no result for query: " + query);
                     }
+                    return true;
 
                 } finally {
                     rs.close();
@@ -469,7 +470,6 @@ public class PooledConnection {
         } catch (SQLException e) {
             return false;
         }
-        return false;
     } //validate
 
     /**
